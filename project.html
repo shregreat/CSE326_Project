@@ -1,0 +1,1144 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AirWatch Pro - Advanced Air Quality Monitoring</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/3.7.0/chart.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/leaflet.min.js"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/leaflet.css">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Inter', system-ui, -apple-system, sans-serif;
+        }
+
+        body {
+            background-color: #f0f2f5;
+            color: #333;
+        }
+
+        .hero {
+            background: linear-gradient(rgba(0, 0, 0, 0.7), rgba(0, 0, 0, 0.8)), 
+                        url('/api/placeholder/1920/600');
+            background-size: cover;
+            background-position: center;
+            color: white;
+            padding: 6rem 0;
+            text-align: center;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .hero::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: 
+                radial-gradient(circle at 20% 50%, rgba(76, 161, 255, 0.1), transparent),
+                radial-gradient(circle at 80% 50%, rgba(28, 216, 210, 0.1), transparent);
+        }
+
+        .hero-content {
+            position: relative;
+            z-index: 1;
+        }
+
+        .hero h1 {
+            font-size: 3rem;
+            margin-bottom: 1.5rem;
+            background: linear-gradient(45deg, #4CA1FF, #1CD8D2);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .hero p {
+            font-size: 1.3rem;
+            max-width: 700px;
+            margin: 0 auto;
+            line-height: 1.6;
+        }
+
+        .navbar {
+            background-color: rgba(15, 23, 42, 0.95);
+            padding: 1rem;
+            color: white;
+            position: sticky;
+            top: 0;
+            z-index: 1000;
+            backdrop-filter: blur(10px);
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 1rem;
+        }
+
+        .grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 2rem;
+            margin-top: 2rem;
+        }
+
+        .card {
+            background: white;
+            border-radius: 20px;
+            padding: 2rem;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+            transition: all 0.3s ease;
+        }
+
+        .image-gallery {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 1.5rem;
+            margin: 2rem 0;
+        }
+
+        .gallery-item {
+            position: relative;
+            border-radius: 15px;
+            overflow: hidden;
+            height: 200px;
+        }
+
+        .gallery-item img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            transition: transform 0.3s ease;
+        }
+
+        .gallery-item:hover img {
+            transform: scale(1.05);
+        }
+
+        .gallery-caption {
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            background: rgba(0, 0, 0, 0.7);
+            color: white;
+            padding: 1rem;
+            font-size: 0.9rem;
+        }
+
+        .causes-section {
+            background: linear-gradient(to right, #f8f9fa, #e9ecef);
+            padding: 3rem 0;
+            margin: 3rem 0;
+            border-radius: 20px;
+        }
+
+        .cause-card {
+            background: white;
+            padding: 1.5rem;
+            border-radius: 15px;
+            margin: 1rem 0;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+            display: grid;
+            grid-template-columns: auto 1fr;
+            gap: 1.5rem;
+            align-items: center;
+        }
+
+        .cause-icon {
+            font-size: 2rem;
+            background: #f0f2f5;
+            padding: 1rem;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .prevention-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 1.5rem;
+            margin: 2rem 0;
+        }
+
+        .prevention-card {
+            background: white;
+            padding: 1.5rem;
+            border-radius: 15px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+        }
+
+        .prevention-card h3 {
+            color: #2563eb;
+            margin-bottom: 1rem;
+        }
+
+        .prevention-list {
+            list-style: none;
+        }
+
+        .prevention-list li {
+            margin: 0.5rem 0;
+            padding: 0.5rem;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        #map {
+            height: 400px;
+            border-radius: 15px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+        }
+
+        .section-title {
+            font-size: 2.5rem;
+            margin: 3rem 0 2rem;
+            text-align: center;
+            background: linear-gradient(45deg, #2563eb, #1CD8D2);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        @media (max-width: 768px) {
+            .grid {
+                grid-template-columns: 1fr;
+            }
+            .hero {
+                padding: 3rem 0;
+            }
+            .hero h1 {
+                font-size: 2rem;
+            }
+            .cause-card {
+                grid-template-columns: 1fr;
+                text-align: center;
+            }
+            .cause-icon {
+                margin: 0 auto;
+            }
+        }
+    </style>
+</head>
+<body>
+    <nav class="navbar">
+        <div class="container">
+            <h1>AirWatch Pro</h1>
+        </div>
+    </nav>
+
+    <div class="hero">
+        <div class="hero-content">
+            <h1>Next-Gen Air Quality Monitoring</h1>
+            <p>Advanced IoT sensors, real-time analytics, and AI-powered predictions for better air quality management</p>
+        </div>
+    </div>
+
+    <div class="container">
+        <h2 class="section-title">Global Air Quality Snapshot</h2>
+        <div class="image-gallery">
+            <div class="gallery-item">
+                <img src="https://th.bing.com/th/id/R.0503e6e73ed1b90fec4886e4dbe9d9bb?rik=bRKyyKos6HFOag&riu=http%3a%2f%2fcdn.static-economist.com%2fsites%2fdefault%2ffiles%2fimages%2fprint-edition%2f20160709_CNP002_0.jpg&ehk=NS%2briVYzBKVPW39ZE3N4MplihgqYvYbW1JosHytatmM%3d&risl=&pid=ImgRaw&r=0" alt="Beijing Smog">
+                <div class="gallery-caption">Beijing, China - Heavy Industrial Pollution</div>
+            </div>
+            <div class="gallery-item">
+                <img src="https://static01.nyt.com/images/2012/12/27/world/delhi/delhi-superJumbo-v2.jpg?quality=90&auto=webp" alt="Delhi Smog">
+                <div class="gallery-caption">New Delhi, India - Severe Air Quality</div>
+            </div>
+            <div class="gallery-item">
+                <img src="https://media.greenmatters.com/brand-img/ytZ-T9sp7/0x0/what-emissions-do-cars-produce4-1604596615333.jpg" alt="Los Angeles Smog">
+                <div class="gallery-caption">Los Angeles, USA - Vehicle Emissions</div>
+            </div>
+            <div class="gallery-item">
+                <img src="https://i-invdn-com.investing.com/trkd-images/LYNXMPEJ6R0BS_L.jpg" alt="London Clean Air">
+                <div class="gallery-caption">London, UK - Clean Air Zone Implementation</div>
+            </div>
+        </div>
+
+        <div class="grid">
+            <div class="card">
+                <h2>Your Location's Air Quality</h2>
+                <div id="map"></div>
+                <p id="location-status">Detecting your location...</p>
+            </div>
+        </div>
+
+        <div class="causes-section">
+            <h2 class="section-title">Major Causes of Air Pollution</h2>
+            <div class="cause-card">
+                <div class="cause-icon">🏭</div>
+                <div>
+                    <h3>Industrial Emissions</h3>
+                    <p>- Manufacturing facilities and power plants</p>
+                    <p>- Chemical processing and metal production</p>
+                    <p>- Mining and resource extraction</p>
+                </div>
+            </div>
+            <div class="cause-card">
+                <div class="cause-icon">🚗</div>
+                <div>
+                    <h3>Vehicle Emissions</h3>
+                    <p>- Heavy traffic in urban areas</p>
+                    <p>- Diesel engine emissions</p>
+                    <p>- Aviation and shipping pollution</p>
+                </div>
+            </div>
+            <div class="cause-card">
+                <div class="cause-icon">🌾</div>
+                <div>
+                    <h3>Agricultural Activities</h3>
+                    <p>- Crop burning and field clearing</p>
+                    <p>- Livestock emissions</p>
+                    <p>- Pesticide and fertilizer use</p>
+                </div>
+            </div>
+            <div class="cause-card">
+                <div class="cause-icon">🏗️</div>
+                <div>
+                    <h3>Construction</h3>
+                    <p>- Dust from construction sites</p>
+                    <p>- Demolition particles</p>
+                    <p>- Construction material emissions</p>
+                </div>
+            </div>
+            <div class="cause-card">
+                <div class="cause-icon">🏠</div>
+                <div>
+                    <h3>Household Activities</h3>
+                    <p>- Indoor cooking and heating</p>
+                    <p>- Use of chemical products</p>
+                    <p>- Household waste burning</p>
+                </div>
+            </div>
+        </div>
+
+        <h2 class="section-title">Prevention & Control Measures</h2>
+        <div class="prevention-grid">
+            <div class="prevention-card">
+                <h3>Individual Actions</h3>
+                <ul class="prevention-list">
+                    <li>🚶‍♂️ Use public transportation or carpooling</li>
+                    <li>🌱 Plant trees and maintain green spaces</li>
+                    <li>♻️ Practice proper waste management</li>
+                    <li>🔌 Reduce energy consumption</li>
+                    <li>🚲 Choose cycling or walking for short distances</li>
+                </ul>
+            </div>
+            <div class="prevention-card">
+                <h3>Industrial Measures</h3>
+                <ul class="prevention-list">
+                    <li>⚡ Switch to renewable energy sources</li>
+                    <li>🏭 Install emission control systems</li>
+                    <li>📊 Regular monitoring and maintenance</li>
+                    <li>🔬 Implement clean technologies</li>
+                    <li>📝 Follow environmental regulations</li>
+                </ul>
+            </div>
+            <div class="prevention-card">
+                <h3>Government Policies</h3>
+                <ul class="prevention-list">
+                    <li>📜 Strict emission standards</li>
+                    <li>💰 Green technology incentives</li>
+                    <li>🚫 Vehicle restriction zones</li>
+                    <li>🌿 Urban forestry programs</li>
+                    <li>📱 Public awareness campaigns</li>
+                </ul>
+            </div>
+            <div class="prevention-card">
+                <h3>Smart City Solutions</h3>
+                <ul class="prevention-list">
+                    <li>📡 IoT-based monitoring systems</li>
+                    <li>🤖 AI-powered prediction models</li>
+                    <li>📱 Real-time alert systems</li>
+                    <li>🚦 Smart traffic management</li>
+                    <li>🏙️ Green building initiatives</li>
+                </ul>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Initialize map with geolocation
+        function initMap() {
+            if ("geolocation" in navigator) {
+                navigator.geolocation.getCurrentPosition(function(position) {
+                    const lat = position.coords.latitude;
+                    const lon = position.coords.longitude;
+                    
+                    const map = L.map('map').setView([lat, lon], 13);
+                    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+                        attribution: '© OpenStreetMap contributors'
+                    }).addTo(map);
+
+                    // Add marker for current location
+                    L.marker([lat, lon]).addTo(map)
+                        .bindPopup('Your Location')
+                        .openPopup();
+
+                    // Add pollution heatmap (simulated)
+                    const radius = 2000;
+                    L.circle([lat, lon], {
+                        color: 'red',
+                        fillColor: '#f03',
+                        fillOpacity: 0.3,
+                        radius: radius
+                    }).addTo(map);
+
+                    document.getElementById('location-status').textContent = 'Your location has been detected';
+                }, function(error) {
+                    document.getElementById('location-status').textContent = 
+                        'Error detecting location. Please enable location services.';
+                });
+            } else {
+                document.getElementById('location-status').textContent = 
+                    'Location services not available in your browser.';
+            }
+        }
+
+        // Initialize map when page loads
+        window.onload = initMap;
+    </script>
+</body>
+</html>
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AirWatch - Air Quality Monitoring</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/3.7.0/chart.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/leaflet.min.js"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/leaflet.css">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Inter', system-ui, -apple-system, sans-serif;
+        }
+
+        body {
+            background-color: #f0f2f5;
+            color: #333;
+        }
+
+        .hero {
+            background: linear-gradient(rgba(0, 0, 0, 0.6), rgba(0, 0, 0, 0.7)), url('/api/placeholder/1920/600');
+            background-size: cover;
+            background-position: center;
+            color: white;
+            padding: 6rem 0;
+            text-align: center;
+            position: relative;
+        }
+
+        .hero::after {
+            content: '';
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            height: 100px;
+            background: linear-gradient(to bottom, transparent, #f0f2f5);
+        }
+
+        .hero h1 {
+            font-size: 3.5rem;
+            margin-bottom: 1.5rem;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
+        }
+
+        .hero p {
+            font-size: 1.4rem;
+            max-width: 700px;
+            margin: 0 auto;
+            text-shadow: 1px 1px 2px rgba(0,0,0,0.3);
+        }
+
+        .navbar {
+            background-color: rgba(26, 26, 26, 0.95);
+            padding: 1.2rem;
+            color: white;
+            position: sticky;
+            top: 0;
+            z-index: 1000;
+            backdrop-filter: blur(10px);
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+
+        .navbar .container {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .search-section {
+            background: white;
+            padding: 2rem;
+            border-radius: 20px;
+            margin: -50px auto 30px;
+            max-width: 800px;
+            position: relative;
+            z-index: 10;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.1);
+        }
+
+        .search-box {
+            display: flex;
+            gap: 1rem;
+            margin-bottom: 1rem;
+        }
+
+        .search-input {
+            flex: 1;
+            padding: 1rem;
+            border: 2px solid #e1e1e1;
+            border-radius: 10px;
+            font-size: 1.1rem;
+            transition: all 0.3s ease;
+        }
+
+        .search-input:focus {
+            border-color: #0d6efd;
+            outline: none;
+            box-shadow: 0 0 0 3px rgba(13, 110, 253, 0.25);
+        }
+
+        .search-button {
+            padding: 1rem 2rem;
+            background: #0d6efd;
+            color: white;
+            border: none;
+            border-radius: 10px;
+            cursor: pointer;
+            font-size: 1.1rem;
+            transition: all 0.3s ease;
+        }
+
+        .search-button:hover {
+            background: #0b5ed7;
+            transform: translateY(-2px);
+        }
+
+        .forecast-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+            gap: 1rem;
+            margin-top: 1rem;
+        }
+
+        .forecast-card {
+            background: #f8f9fa;
+            padding: 1rem;
+            border-radius: 10px;
+            text-align: center;
+            transition: transform 0.3s ease;
+        }
+
+        .forecast-card:hover {
+            transform: translateY(-5px);
+        }
+
+        .causes-section {
+            background: linear-gradient(rgba(255, 255, 255, 0.9), rgba(255, 255, 255, 0.9)), url('/api/placeholder/1920/600');
+            background-size: cover;
+            background-position: center;
+            padding: 4rem 0;
+            margin: 3rem 0;
+        }
+
+        .causes-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: 2rem;
+            margin-top: 2rem;
+        }
+
+        .cause-card {
+            background: white;
+            padding: 2rem;
+            border-radius: 15px;
+            text-align: left;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+            transition: all 0.3s ease;
+            display: flex;
+            flex-direction: column;
+            gap: 1rem;
+        }
+
+        .cause-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 6px 20px rgba(0,0,0,0.15);
+        }
+
+        .cause-image {
+            width: 100%;
+            height: 200px;
+            object-fit: cover;
+            border-radius: 10px;
+            margin-bottom: 1rem;
+        }
+
+        .iot-solutions {
+            background: linear-gradient(rgba(255, 255, 255, 0.9), rgba(255, 255, 255, 0.9)), url('/api/placeholder/1920/600');
+            background-size: cover;
+            background-attachment: fixed;
+            padding: 4rem 0;
+        }
+
+        .iot-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 2rem;
+            margin-top: 2rem;
+        }
+
+        .iot-card {
+            background: white;
+            padding: 2rem;
+            border-radius: 15px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+            transition: all 0.3s ease;
+        }
+
+        .iot-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 6px 20px rgba(0,0,0,0.15);
+        }
+
+        .iot-image {
+            width: 100%;
+            height: 200px;
+            object-fit: cover;
+            border-radius: 10px;
+            margin-bottom: 1rem;
+        }
+
+        .section-title {
+            font-size: 2.5rem;
+            margin-bottom: 1rem;
+            text-align: center;
+            color: #1a1a1a;
+            position: relative;
+            padding-bottom: 1rem;
+        }
+
+        .section-title::after {
+            content: '';
+            position: absolute;
+            bottom: 0;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 100px;
+            height: 4px;
+            background: #0d6efd;
+            border-radius: 2px;
+        }
+
+        @media (max-width: 768px) {
+            .hero h1 {
+                font-size: 2.5rem;
+            }
+
+            .hero p {
+                font-size: 1.1rem;
+                padding: 0 1rem;
+            }
+
+            .search-section {
+                margin: -30px 1rem 30px;
+                padding: 1.5rem;
+            }
+
+            .search-box {
+                flex-direction: column;
+            }
+
+            .search-button {
+                width: 100%;
+            }
+
+            .cause-card, .iot-card {
+                margin: 0 1rem;
+            }
+        }
+
+        @media (max-width: 480px) {
+            .hero h1 {
+                font-size: 2rem;
+            }
+
+            .forecast-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        /* Animation classes */
+        .fade-in {
+            animation: fadeIn 0.5s ease-in;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+    </style>
+</head>
+<body>
+    <nav class="navbar">
+        <div class="container">
+            <h1>AirWatch</h1>
+            <div class="nav-links">
+                <a href="#forecast" style="color: white; text-decoration: none; margin-left: 1rem;">Forecast</a>
+                <a href="#causes" style="color: white; text-decoration: none; margin-left: 1rem;">Causes</a>
+                <a href="#solutions" style="color: white; text-decoration: none; margin-left: 1rem;">Solutions</a>
+            </div>
+        </div>
+    </nav>
+
+    <div class="hero">
+        <div class="container">
+            <h1>Breathe Better with AirWatch</h1>
+            <p>Real-time air quality monitoring and personalized recommendations for a healthier life</p>
+        </div>
+    </div>
+
+    <div class="container">
+        <section id="forecast" class="search-section fade-in">
+            <h2 class="section-title">Air Quality Forecast</h2>
+            <div class="search-box">
+                <input type="text" class="search-input" placeholder="Enter city name or location..." id="location-search">
+                <button class="search-button" onclick="searchLocation()">Search</button>
+            </div>
+            <div class="forecast-grid" id="forecast-results">
+                <!-- Forecast cards will be inserted here -->
+            </div>
+        </section>
+
+        <section id="causes" class="causes-section">
+            <h2 class="section-title">Major Causes of Air Pollution</h2>
+            <div class="causes-grid">
+                <!-- Cause cards with images -->
+                <div class="cause-card fade-in">
+                    <img src="https://th.bing.com/th/id/OIP.AKfnvJvkxxbV8H6yKtybOAHaEc?rs=1&pid=ImgDetMain" alt="Industrial Emissions" class="cause-image">
+                    <h3>Industrial Emissions</h3>
+                    <p>Factory smoke, chemical releases, and industrial processes contribute significantly to urban air pollution</p>
+                </div>
+                <!-- Add more cause cards with images -->
+            </div>
+        </section>
+
+        <section id="solutions" class="iot-solutions">
+            <h2 class="section-title">IoT Monitoring Solutions</h2>
+            <div class="iot-grid">
+                <!-- IoT solution cards with images -->
+                <div class="iot-card fade-in">
+                    <img src="https://th.bing.com/th/id/OIP.i9i51mo7XJnnG_YdaDWctgAAAA?rs=1&pid=ImgDetMain" alt="Smart Sensor Network" class="iot-image">
+                    <h3>Smart Sensor Network</h3>
+                    <p>Distributed IoT sensors measuring multiple pollutants in real-time</p>
+                </div>
+                <!-- Add more IoT solution cards with images -->
+            </div>
+        </section>
+    </div>
+
+    <script>
+        // Simulate forecast data
+        function searchLocation() {
+            const location = document.getElementById('location-search').value;
+            const forecastGrid = document.getElementById('forecast-results');
+            
+            // Clear previous results
+            forecastGrid.innerHTML = '';
+            
+            // Simulate loading state
+            forecastGrid.innerHTML = '<div class="forecast-card">Loading...</div>';
+            
+            // Simulate API call delay
+            setTimeout(() => {
+                // Generate random forecast data
+                const days = ['Today', 'Tomorrow', 'Day 3', 'Day 4', 'Day 5'];
+                const forecastHTML = days.map(day => {
+                    const aqi = Math.floor(Math.random() * 150) + 50;
+                    const quality = aqi <= 50 ? 'Good' : aqi <= 100 ? 'Moderate' : 'Poor';
+                    const color = aqi <= 50 ? '#76b852' : aqi <= 100 ? '#ffd86f' : '#ef473a';
+                    
+                    return `
+                        <div class="forecast-card fade-in" style="border-top: 4px solid ${color}">
+                            <h3>${day}</h3>
+                            <div style="font-size: 2rem; margin: 1rem 0;">${aqi}</div>
+                            <p>${quality}</p>
+                            <small>${location}</small>
+                        </div>
+                    `;
+                }).join('');
+                
+                forecastGrid.innerHTML = forecastHTML;
+            }, 1000);
+        }
+
+        // Add scroll animation
+        function revealOnScroll() {
+            const elements = document.querySelectorAll('.fade-in');
+            elements.forEach(element => {
+                const elementTop = element.getBoundingClientRect().top;
+                const elementVisible = 150;
+                
+                if (elementTop < window.innerHeight - elementVisible) {
+                    element.style.opacity = '1';
+                    element.style.transform = 'translateY(0)';
+                }
+            });
+        }
+
+        window.addEventListener('scroll', revealOnScroll);
+        revealOnScroll(); // Initial check
+    </script>
+</body>
+</html>
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AirWatch - Air Quality Monitoring</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/3.7.0/chart.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/leaflet.min.js"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/leaflet.css">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Inter', system-ui, -apple-system, sans-serif;
+        }
+
+        body {
+            background-color: #f0f2f5;
+            color: #333;
+        }
+
+        .hero {
+            background: linear-gradient(rgba(0, 0, 0, 0.5), rgba(0, 0, 0, 0.7)), url('/api/placeholder/1920/400');
+            background-size: cover;
+            background-position: center;
+            color: white;
+            padding: 4rem 0;
+            text-align: center;
+        }
+
+        .hero h1 {
+            font-size: 2.5rem;
+            margin-bottom: 1rem;
+        }
+
+        .hero p {
+            font-size: 1.2rem;
+            max-width: 600px;
+            margin: 0 auto;
+        }
+
+        .navbar {
+            background-color: rgba(26, 26, 26, 0.95);
+            padding: 1rem;
+            color: white;
+            position: sticky;
+            top: 0;
+            z-index: 1000;
+            backdrop-filter: blur(10px);
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 1rem;
+        }
+
+        .grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 1.5rem;
+            margin-top: 1.5rem;
+        }
+
+        .card {
+            background: white;
+            border-radius: 15px;
+            padding: 1.5rem;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+            transition: transform 0.2s;
+        }
+
+        .card:hover {
+            transform: translateY(-5px);
+        }
+
+        .warning-banner {
+            background: #dc3545;
+            color: white;
+            padding: 1rem;
+            border-radius: 10px;
+            margin-bottom: 1rem;
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+            animation: pulse 2s infinite;
+        }
+
+        @keyframes pulse {
+            0% { opacity: 1; }
+            50% { opacity: 0.8; }
+            100% { opacity: 1; }
+        }
+
+        .clean-routes {
+            background: linear-gradient(rgba(255, 255, 255, 0.9), rgba(255, 255, 255, 0.9)), url('/api/placeholder/400/300');
+            background-size: cover;
+            background-position: center;
+            padding: 2rem;
+        }
+
+        .route-card {
+            background: white;
+            padding: 1rem;
+            border-radius: 10px;
+            margin: 1rem 0;
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+
+        .route-icon {
+            font-size: 1.5rem;
+            background: #e9ecef;
+            padding: 1rem;
+            border-radius: 50%;
+        }
+
+        .causes-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 1rem;
+            margin-top: 1rem;
+        }
+
+        .cause-card {
+            background: #f8f9fa;
+            padding: 1.5rem;
+            border-radius: 10px;
+            text-align: center;
+        }
+
+        .prevention-list {
+            list-style: none;
+        }
+
+        .prevention-list li {
+            background: white;
+            margin: 0.5rem 0;
+            padding: 1rem;
+            border-radius: 10px;
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+        }
+
+        .prevention-icon {
+            font-size: 1.5rem;
+            color: #0d6efd;
+        }
+
+        .aqi-display {
+            text-align: center;
+            font-size: 2.5rem;
+            font-weight: bold;
+            padding: 2rem;
+            border-radius: 50%;
+            width: 150px;
+            height: 150px;
+            margin: 0 auto;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            background: linear-gradient(135deg, #6dd5ed, #2193b0);
+            color: white;
+        }
+
+        #map {
+            height: 400px;
+            border-radius: 15px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+        }
+
+        .section-title {
+            font-size: 2rem;
+            margin: 3rem 0 1.5rem;
+            text-align: center;
+            color: #1a1a1a;
+        }
+
+        @media (max-width: 768px) {
+            .grid {
+                grid-template-columns: 1fr;
+            }
+            .hero {
+                padding: 2rem 0;
+            }
+            .hero h1 {
+                font-size: 2rem;
+            }
+        }
+    </style>
+</head>
+<body>
+    <nav class="navbar">
+        <div class="container">
+            <h1>AirWatch</h1>
+        </div>
+    </nav>
+
+    <div class="hero">
+        <div class="container">
+            <h1>Breathe Better with AirWatch</h1>
+            <p>Real-time air quality monitoring and personalized recommendations for a healthier life</p>
+        </div>
+    </div>
+
+    <div class="container">
+        <div class="warning-banner" id="warning-banner">
+            ⚠️ Alert: High pollution levels detected in your area! Take necessary precautions.
+        </div>
+
+        <div class="grid">
+            <div class="card">
+                <h2>Real-time AQI</h2>
+                <div class="aqi-display">
+                    <span id="aqi-value">157</span>
+                    <div style="font-size: 1rem;">Unhealthy</div>
+                </div>
+                <div class="stats-grid">
+                    <div class="stat-card">
+                        <div>PM2.5</div>
+                        <div>35 µg/m³</div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="card">
+                <h2>Pollution Map</h2>
+                <div id="map"></div>
+            </div>
+        </div>
+
+        <h2 class="section-title">Clean Routes</h2>
+        <div class="clean-routes">
+            <div class="route-card">
+                <div class="route-icon">🚶</div>
+                <div>
+                    <h3>Walking Route A</h3>
+                    <p>AQI: 75 (Good) • 15 minutes • Park Path</p>
+                </div>
+            </div>
+            <div class="route-card">
+                <div class="route-icon">🚲</div>
+                <div>
+                    <h3>Cycling Route B</h3>
+                    <p>AQI: 82 (Moderate) • 20 minutes • Riverside</p>
+                </div>
+            </div>
+        </div>
+
+        <h2 class="section-title">Major Causes of Air Pollution</h2>
+        <div class="causes-grid">
+            <div class="cause-card">
+                <h3>Industrial Emissions</h3>
+                <p>Factory smoke and chemical releases contribute to urban air pollution</p>
+            </div>
+            <div class="cause-card">
+                <h3>Vehicle Exhaust</h3>
+                <p>Transportation emissions are a major source of urban air pollution</p>
+            </div>
+            <div class="cause-card">
+                <h3>Agricultural Activities</h3>
+                <p>Burning of agricultural waste and use of pesticides</p>
+            </div>
+        </div>
+
+        <h2 class="section-title">Preventive Measures</h2>
+        <ul class="prevention-list">
+            <li>
+                <span class="prevention-icon">😷</span>
+                <div>
+                    <h3>Use N95 Masks</h3>
+                    <p>When AQI exceeds 150, wear proper masks outdoors</p>
+                </div>
+            </li>
+            <li>
+                <span class="prevention-icon">🏃</span>
+                <div>
+                    <h3>Exercise Indoors</h3>
+                    <p>Choose indoor workouts during high pollution days</p>
+                </div>
+            </li>
+            <li>
+                <span class="prevention-icon">🌿</span>
+                <div>
+                    <h3>Air Purifying Plants</h3>
+                    <p>Keep indoor air clean with natural air purifiers</p>
+                </div>
+            </li>
+        </ul>
+    </div>
+
+    <script>
+        // Initialize map
+        const map = L.map('map').setView([51.505, -0.09], 13);
+        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+            attribution: '© OpenStreetMap contributors'
+        }).addTo(map);
+
+        // Add pollution heatmap (simulated)
+        const circle = L.circle([51.505, -0.09], {
+            color: 'red',
+            fillColor: '#f03',
+            fillOpacity: 0.5,
+            radius: 500
+        }).addTo(map);
+
+        // Simulate real-time AQI updates
+        function updateAQI() {
+            const aqiValue = document.getElementById('aqi-value');
+            const currentValue = parseInt(aqiValue.textContent);
+            const newValue = currentValue + Math.floor(Math.random() * 5) - 2;
+            aqiValue.textContent = newValue;
+
+            // Update warning banner visibility
+            const warningBanner = document.getElementById('warning-banner');
+            warningBanner.style.display = newValue > 150 ? 'flex' : 'none';
+
+            // Update AQI display color
+            const aqiDisplay = document.querySelector('.aqi-display');
+            if (newValue <= 100) {
+                aqiDisplay.style.background = 'linear-gradient(135deg, #76b852, #8DC26F)';
+            } else if (100<newValue<=150){
+                aqiDisplay.style.background = 'linear-gradient(135deg, #ffd86f, #fc6262)';
+            } else if (newValue>150) {
+                aqiDisplay.style.background = 'linear-gradient(135deg, #cb2d3e, #ef473a)';
+            }
+        }
+
+        setInterval(updateAQI, 5000);
+
+        // Initialize with current AQI
+        updateAQI();
+    </script>
+</body>
+</html>
